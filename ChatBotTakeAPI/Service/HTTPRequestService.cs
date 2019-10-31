@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 
 namespace ChatBotTakeAPI.Service
 {
+    //Singleton para realizar as requisições HTTP.
     class HTTPRequestService
     {
         private readonly string USER_AGENT = "Mozilla/5.0";
-
         private static readonly HTTPRequestService instance = new HTTPRequestService();
         private HttpClient client = new HttpClient();
 
@@ -26,6 +26,7 @@ namespace ChatBotTakeAPI.Service
             }
         }
 
+        //Realiza a requisição GET e retorna o conteúdo da resposta obtida.
         public async Task<String> GetAsync(String url)
         {
             var responseString = "";

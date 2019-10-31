@@ -18,7 +18,10 @@ namespace ChatBotTakeAPI.Controller
 
     public class MessageReceiver : IMessageReceiver
     {
+        //Url para acesso as informações da Take no Github
         private readonly string USER_GIT_URL = "https://api.github.com/users/takenet";
+        /*Url para acesso os repositórios públicos, e já ordenados por data, da Take no Github. 
+        A ordenação e tipo de repositório são passados via parâmetros na url.*/
         private readonly string USER_REPOS_URL = "https://api.github.com/users/takenet/repos?type=public&sort=created&direction=asc";
 
         private readonly ISender _sender;
@@ -29,6 +32,7 @@ namespace ChatBotTakeAPI.Controller
             _sender = sender;
         }
 
+        //Executado quando o usuário envia uma mensagem no chat.
         public async Task ReceiveAsync(Message message, CancellationToken cancellationToken)
         {
             gitUser = await getGitUserInformationAsync();
@@ -36,11 +40,13 @@ namespace ChatBotTakeAPI.Controller
             Document document;
             document = getDocumentCollectionMenuMultimidia();
 
-            Trace.TraceInformation($"From: {message.From} \tContent: {message.Content}");
+            
+            //Retorna uma mensagem no chat
             await _sender.SendMessageAsync(document, message.From, cancellationToken);
 
         }
 
+        //Busca os dados no git via requisição HTTP Get e retorna um objeto GitHubUserModel com as informações.
         private async Task<GitHubUserModel> getGitUserInformationAsync()
         {
             String userResponse = await HTTPRequestService.Instance.GetAsync(USER_GIT_URL);
@@ -58,6 +64,7 @@ namespace ChatBotTakeAPI.Controller
         }
 
 
+        //Cria um carrossel de cards com as informações dos 5 primeiros repositórios da Take no GitHub.
         public DocumentCollection getDocumentCollectionMenuMultimidia()
         {
 
