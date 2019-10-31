@@ -13,6 +13,7 @@ namespace MediaReceiver
 
     public class MessageReceiver : IMessageReceiver
     {
+
         private readonly ISender _sender;
         private HttpClient client = new HttpClient();
         Document[] documents;
