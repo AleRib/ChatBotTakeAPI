@@ -5,21 +5,24 @@ using Lime.Protocol;
 using System.Diagnostics;
 using Take.Blip.Client;
 using Lime.Messaging.Contents;
+using ChatBotTakeAPI.Service;
+using ChatBotTakeAPI.Model;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace MediaReceiver
+namespace ChatBotTakeAPI.Controller
 {
 
     public class MessageReceiver : IMessageReceiver
     {
+        private readonly string USER_GIT_URL = "https://api.github.com/users/takenet";
+        private readonly string USER_REPOS_URL = "https://api.github.com/users/takenet/repos?type=public&sort=created&direction=asc";
 
         private readonly ISender _sender;
-        private HttpClient client = new HttpClient();
-        Document[] documents;
-        JsonDocument jsonDocuments;
-        JsonDocument jsonDocuments2;
-        JsonDocument jsonDocuments3;
+        GitHubUserModel gitUser;
 
         public MessageReceiver(ISender sender)
         {
@@ -28,179 +31,61 @@ namespace MediaReceiver
 
         public async Task ReceiveAsync(Message message, CancellationToken cancellationToken)
         {
+            gitUser = await getGitUserInformationAsync();
+
             Document document;
             document = getDocumentCollectionMenuMultimidia();
-
-            String s = await GetAsync();
 
             Trace.TraceInformation($"From: {message.From} \tContent: {message.Content}");
             await _sender.SendMessageAsync(document, message.From, cancellationToken);
 
         }
 
-
-        public async Task<string> GetAsync()
+        private async Task<GitHubUserModel> getGitUserInformationAsync()
         {
-            var responseString = "";
-            var s = "";
-            HttpResponseMessage response;
-            try
-            {
+            String userResponse = await HTTPRequestService.Instance.GetAsync(USER_GIT_URL);
+            String reposResponse = await HTTPRequestService.Instance.GetAsync(USER_REPOS_URL);
 
-                client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0");
-                response = await client.GetAsync("https://api.github.com/users/takenet/repos?type=public&sort=created&direction=asc");
-                //responseString = await client.GetStringAsync("https://api.github.com/users/takenet/repos?type=public&sort=created&direction=asc");
-                // response = await client.GetAsync("https://api.github.com/");
-                if (response.IsSuccessStatusCode)
-                {
-                    responseString = await response.Content.ReadAsStringAsync();
-                }
-                else
-                {
-                    responseString = response.ToString();
-                }
-                JArray jsonArray = JArray.Parse(responseString);
-                JObject j = null;
+            JObject userObject = JObject.Parse(userResponse);
+            GitHubUserModel gitUser = JsonConvert.DeserializeObject<GitHubUserModel>(userObject.ToString());
 
-                for (int i = 0; i < 5; i++)
-                {
-                    j = JObject.Parse(jsonArray[i].ToString());
-                    s += j["name"].Value<string>();
-                }
-                //responseString = await client.GetStringAsync("https://api.github.com/users/takenet/repos?client_id=xxxx&client_secret=yyyy");
-                //responseString = await client.GetStringAsync("https://api.github.com/users/takenet/repos?type=public&sort=created&direction=asc");
-            }
-            catch (Exception e)
-            {
-                return e.Message;
-            }
+            JArray reposArray = JArray.Parse(reposResponse);
+            List<ProjetoModel> userRepos = JsonConvert.DeserializeObject<List<ProjetoModel>>(reposArray.ToString());
 
+            gitUser.Projetos = userRepos.GetRange(0, 5);
 
-
-            //return new string[] { "value1", "value2" };
-            return s;
+            return gitUser;
         }
 
 
         public DocumentCollection getDocumentCollectionMenuMultimidia()
         {
-            jsonDocuments = new JsonDocument();
-            jsonDocuments2 = new JsonDocument();
-            jsonDocuments3 = new JsonDocument();
 
-            jsonDocuments.Add("Key1", "value1");
-            jsonDocuments.Add("Key2", "2");
+            List<DocumentSelect> documents = new List<DocumentSelect>();
 
-            jsonDocuments2.Add("Key3", "value3");
-            jsonDocuments2.Add("Key4", "4");
-
-            jsonDocuments3.Add("Key5", "value5");
-            jsonDocuments3.Add("Key6", "6");
-
-            DocumentSelect[] documents = new DocumentSelect[]
+            
+            foreach(ProjetoModel projeto in gitUser.Projetos)
             {
-                new DocumentSelect
+                documents.Add(new DocumentSelect
                 {
                     Header = new DocumentContainer
                     {
                         Value = new MediaLink
                         {
-                            Title = "Title",
-                            Text = "This is a first item",
+                            Title = projeto.Full_Name,
+                            Text = projeto.Description,
                             Type = "image/jpeg",
-                            Uri = new Uri("http://www.isharearena.com/wp-content/uploads/2012/12/wallpaper-281049.jpg"),
-                        }
-                    },
-                    Options = new DocumentSelectOption[]
-                    {
-                        new DocumentSelectOption
-                        {
-                            Label = new DocumentContainer
-                            {
-                                Value = new WebLink
-                                {
-                                    Title = "Link",
-                                    Uri = new Uri("http://www.adoteumgatinho.org.br/")
-                                }
-                            }
-                        },
-                        new DocumentSelectOption
-                        {
-                            Label = new DocumentContainer
-                            {
-                                Value = new PlainText
-                                {
-                                    Text = "Text 1"
-                                }
-                            },
-                            Value = new DocumentContainer
-                            {
-                                Value = jsonDocuments
-                            }
+                            Uri = new Uri(gitUser.Avatar_URL),
                         }
                     }
-                },
-                new DocumentSelect
-                {
-                    Header = new DocumentContainer
-                    {
-                        Value = new MediaLink
-                        {
-                            Title = "Title 2",
-                            Text = "This is another item",
-                            Type = "image/jpeg",
-                            Uri = new Uri("http://www.freedigitalphotos.net/images/img/homepage/87357.jpg")
-                        }
-                    },
-                    Options = new DocumentSelectOption[]
-                    {
-                        new DocumentSelectOption
-                        {
-                            Label = new DocumentContainer
-                            {
-                                Value = new WebLink
-                                {
-                                    Title = "Second link",
-                                    Text = "Weblink",
-                                    Uri = new Uri("https://pt.dreamstime.com/foto-de-stock-brinquedo-pl%C3%A1stico-amarelo-do-pato-image44982058")
-                                }
-                            }
-                        },
-                        new DocumentSelectOption
-                        {
-                            Label = new DocumentContainer
-                            {
-                                Value = new PlainText {
-                                    Text = "Second text"
-                                }
-                            },
-                            Value = new DocumentContainer
-                            {
-                                Value = jsonDocuments2
-                            }
-                        },
-                        new DocumentSelectOption
-                        {
-                            Label = new DocumentContainer
-                            {
-                                Value = new PlainText {
-                                    Text = "More one text"
-                                }
-                            },
-                            Value = new DocumentContainer
-                            {
-                                Value = jsonDocuments3
-                            }
-                        }
-                    }
-                }
+                });
 
-            };
+            }
 
             var document = new DocumentCollection
             {
                 ItemType = "application/vnd.lime.document-select+json",
-                Items = documents,
+                Items = documents.ToArray(),
             };
 
             return document;

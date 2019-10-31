@@ -7,11 +7,9 @@ using Serilog;
 using Serilog.Core;
 using Take.Blip.Client;
 
-namespace MediaReceiver
+namespace ChatBotTakeAPI
 {
-    /// <summary>
-    /// Defines a type that is called once during the application initialization.
-    /// </summary>
+
     public class Startup : IStartable
     {
         private readonly ISender _sender;
