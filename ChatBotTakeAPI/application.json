@@ -1,0 +1,11 @@
+﻿{
+  "identifier": "projetostakegithub",
+  "accessKey": "UDNSMThFVmtIZ1lnVlJ2S1drVlg=",
+  "messageReceivers": [
+    {
+      "type": "MessageReceiver",
+      "mediaType": "text/plain"
+    }
+  ],
+  "startupType": "Startup"
+}
